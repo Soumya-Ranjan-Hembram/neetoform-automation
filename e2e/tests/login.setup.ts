@@ -1,8 +1,8 @@
 import { test } from "../fixture";
-
+import { STORAGE_STATE } from "../../playwright.config";
 
 test.describe("Login page", () => {
-    test("should login to home page", async ({
+    test("should login to home page with correct credentials.", async ({
         page,
         loginPage
     }) => {
@@ -13,6 +13,6 @@ test.describe("Login page", () => {
             password: "welcome",
             username: "Oliver Smith"
         });
-
+        await page.context().storageState({ path: STORAGE_STATE });
     });
 })

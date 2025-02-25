@@ -13,23 +13,26 @@ export default defineConfig({
 
   use: {
     trace: 'on',
+    baseURL: "https://neeto-form-web-playwright.neetodeployapp.com"
   },
 
   projects: [
     {
-      name: 'chromium',
+      name: 'login',
       use: { ...devices['Desktop Chrome'] },
+      testMatch: "**/login.setup.ts",
     },
-
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
+    {
+      name: "teardown",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: "**/global.teardown.ts",
+    },
+    {
+      name: "Logged In tests",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["login"],
+      teardown: "teardown",
+      testMatch: "**/*.spec.ts",
+    },
   ],
 });
