@@ -1,15 +1,15 @@
-import { test, expect } from "@playwright/test";
+// import { test, expect } from "@playwright/test";
+import { test } from "../fixture";
 
 
 test.describe("Login page", () => {
-    test("should login to home page", async ({ page }) => {
+    test("should login to home page", async ({ page, loginPage }) => {
         await page.goto("https://neeto-form-web-playwright.neetodeployapp.com/")
 
-        await page.locator('[data-test-id="login-email"]').fill("oliver@example.com");
-        await page.locator('[data-test-id="login-password"]').fill('welcome');
-
-        await page.locator('[data-test-id="login-submit-button"]').click();
-        await expect(page.getByRole('button', { name: 'avatar-Oliver Smith' })).toBeVisible();
-
+        await loginPage.loginAndVerifyUser({
+            email: "oliver@example.com",
+            password: "welcome",
+            username: "Oliver Smith"
+        });
     });
 })
