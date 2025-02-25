@@ -1,9 +1,11 @@
-// import { test, expect } from "@playwright/test";
 import { test } from "../fixture";
 
 
 test.describe("Login page", () => {
-    test("should login to home page", async ({ page, loginPage }) => {
+    test("should login to home page", async ({
+        page,
+        loginPage
+    }) => {
         await page.goto("https://neeto-form-web-playwright.neetodeployapp.com/")
 
         await loginPage.loginAndVerifyUser({
@@ -11,5 +13,6 @@ test.describe("Login page", () => {
             password: "welcome",
             username: "Oliver Smith"
         });
+
     });
 })
