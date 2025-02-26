@@ -1,5 +1,7 @@
 import { BrowserContext, Page, expect } from "@playwright/test";
-
+interface FormName {
+    formName: string;
+}
 export default class FormPage {
     page: Page;
 
@@ -14,9 +16,21 @@ export default class FormPage {
     }
 
 
-    addFormFields = async () => {
+    addFormFieldsAndUpdateFormName = async ({ formName }: FormName) => {
         await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
         await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
+        await this.page.getByTestId('neeto-molecules-value-display').click();
+
+        await expect(this.page.getByTestId('neeto-molecules-name-input')).toBeVisible();
+
+        const nameInput = this.page.getByTestId('neeto-molecules-name-input');
+        await nameInput.fill("");
+
+        await nameInput.fill(formName);
+        await this.page.getByTestId('neeto-molecules-rename-button').click()
+
+        await expect(this.page.getByText(formName)).toBeVisible({ timeout: 5000 });
+
 
         await this.page.getByTestId('elements-container').getByRole('button', { name: 'Full name' }).click();
         await this.page.getByTestId('elements-container').getByRole('button', { name: 'Phone number' }).click();
@@ -89,11 +103,16 @@ export default class FormPage {
         await previewPage.locator("[data-cy='phone-number-input-field']").fill("");
     };
 
-    fillAndSubmitForm = async (previewPage: Page) => {
-        await previewPage.locator("[data-cy='first-name-text-field']").fill("John");
-        await previewPage.locator("[data-cy='last-name-text-field']").fill("Doe");
-        await previewPage.locator("[data-cy='email-text-field']").fill("johndoe@example.com");
-        await previewPage.locator("[data-cy='phone-number-input-field']").fill("+12025550123"); // US Number
+    fillAndSubmitForm = async (previewPage: Page, {
+        firstName,
+        lastName,
+        email,
+        phoneNumber
+    }) => {
+        await previewPage.locator("[data-cy='first-name-text-field']").fill(firstName);
+        await previewPage.locator("[data-cy='last-name-text-field']").fill(lastName);
+        await previewPage.locator("[data-cy='email-text-field']").fill(email);
+        await previewPage.locator("[data-cy='phone-number-input-field']").fill(phoneNumber); // US Number
 
         await Promise.all([
             previewPage.waitForURL(/thank-you/),
@@ -103,6 +122,31 @@ export default class FormPage {
         await expect(previewPage.locator("[data-cy='thank-you-page-message']")).toBeVisible();
         await expect(previewPage.getByText("Thank You.")).toBeVisible();
         await expect(previewPage.getByText("Your response has been received.")).toBeVisible();
+
+        await previewPage.close();
+
+    }
+
+    validateTheSubmissionFields = async ({ formName }: FormName, {
+        firstName,
+        lastName,
+        email,
+        // phoneNumber
+    }) => {
+        await this.page.goto("/")
+
+        await expect(this.page.getByRole('button', { name: formName })).toBeVisible({ timeout: 30000 });
+        await this.page.getByRole('button', { name: formName }).click();
+        await expect(this.page.getByRole('link', { name: 'Submissions' })).toBeVisible();
+
+        await this.page.getByRole('link', { name: 'Submissions' }).click();
+
+        const fullName = `${firstName} ${lastName}`;
+        // const fullPhone = "+1 " + phoneNumber
+
+        await expect(this.page.getByText(fullName)).toBeVisible();
+        await expect(this.page.getByText(email)).toBeVisible();
+        // await expect(this.page.getByText(fullPhone)).toBeVisible();
     }
 
 };
