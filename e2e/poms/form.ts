@@ -16,7 +16,7 @@ export default class FormPage {
     }
 
 
-    addFormFieldsAndUpdateFormName = async ({ formName }: FormName) => {
+    updateFormName = async ({ formName }: FormName) => {
         await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
         await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
         await this.page.getByTestId('neeto-molecules-value-display').click();
@@ -30,7 +30,12 @@ export default class FormPage {
         await this.page.getByTestId('neeto-molecules-rename-button').click()
 
         await expect(this.page.getByText(formName)).toBeVisible({ timeout: 5000 });
+    }
 
+
+    addFormFields = async () => {
+        await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
 
         await this.page.getByTestId('elements-container').getByRole('button', { name: 'Full name' }).click();
         await this.page.getByTestId('elements-container').getByRole('button', { name: 'Phone number' }).click();
@@ -50,7 +55,9 @@ export default class FormPage {
         await this.page.getByTestId("publish-preview-button").click();
 
         const previewPage = await pagePromise;
-        await previewPage.waitForLoadState("domcontentloaded");
+        // await previewPage.waitForLoadState("domcontentloaded");
+        await previewPage.waitForLoadState("domcontentloaded", { timeout: 60000 });
+
 
         return previewPage;
     };
@@ -147,6 +154,100 @@ export default class FormPage {
         await expect(this.page.getByText(fullName)).toBeVisible();
         await expect(this.page.getByText(email)).toBeVisible();
         // await expect(this.page.getByText(fullPhone)).toBeVisible();
+
+        await this.page.close();
+
     }
 
+    addSingleAndMultiChoiceElement = async () => {
+
+        await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
+
+        await this.page.getByRole('button', { name: 'Single choice' }).click();
+        await this.page.getByRole('button', { name: 'Multi choice' }).click();
+
+
+    }
+
+    addBulkOptionsToElements = async () => {
+
+        const singleChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(1);
+        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
+
+        await expect(singleChoiceEle).toBeVisible();
+        await expect(multiChoiceEle).toBeVisible();
+
+        await singleChoiceEle.click();
+        await this.page.getByRole('textbox', { name: 'Question' }).fill("Single - demo field name");
+        await this.page.getByTestId('add-bulk-option-link').click();
+
+        await expect(this.page.getByTestId('bulk-add-options-textarea')).toBeVisible();
+        await expect(this.page.locator("[data-testid='bulk-add-options-done-button']")).toBeVisible();
+
+
+        await this.page.getByTestId('bulk-add-options-textarea').fill("Option 5, Option 6, Option 7, Option 8, Option 9, Option 10");
+        // await this.page.getByTestId('bulk-add-options-done-button').click();
+        await this.page.locator("[data-testid='bulk-add-options-done-button']").click();
+        await this.page.waitForTimeout(2000);
+
+        // In future separate this randomzie option from this block.
+
+        await this.page.getByText("Randomize").click()
+        await expect(this.page.getByText("Options will be displayed in random order")).toBeVisible();
+
+
+
+        await multiChoiceEle.click();
+        await this.page.getByRole('textbox', { name: 'Question' }).fill("Multiple - demo field name");
+        await this.page.getByTestId('add-bulk-option-link').click()
+
+        await expect(this.page.getByTestId('bulk-add-options-textarea')).toBeVisible();
+        await expect(this.page.locator("[data-testid='bulk-add-options-done-button']")).toBeVisible();
+
+        await this.page.getByTestId('bulk-add-options-textarea').fill("Option 5, Option 6, Option 7, Option 8, Option 9, Option 10");
+        await this.page.locator("[data-testid='bulk-add-options-done-button']").click();
+        await this.page.waitForTimeout(2000);
+
+
+        // const optionsCount = await this.page.locator("[data-rfd-droppable-id='neeto-molecules-option-fields-options']").c;
+        // console.log(`Options count: ${optionsCount}`);
+
+        // await expect(optionsCount).toBe(10);
+
+        // getByText('Hide question')
+        // This field is hidden to the public. However, you can still edit it
+    }
+
+
+    hideMultiChoiceElement = async () => {
+        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
+        await multiChoiceEle.click();
+        await this.page.getByText('Hide question').click();
+        await expect(this.page.getByText("This field is hidden to the public. However, you can still edit it")).toBeVisible();
+    };
+
+    unhideMultiChoiceElement = async () => {
+        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
+        await multiChoiceEle.click();
+        await this.page.getByText('Hide question').click();
+    };
+
+    validateMultipleIsHiddenAndSingleIsVisible = async (previewPage: Page) => {
+
+        await expect(previewPage.getByText('Single - demo field name*')).toBeVisible();
+
+        await expect(previewPage.getByText('Multiple - demo field name*')).not.toBeVisible();
+
+        await previewPage.close()
+    }
+
+    validateBothMultipleAndSingleIsVisible = async (previewPage) => {
+
+        await expect(previewPage.getByText('Single - demo field name*')).toBeVisible();
+
+        await expect(previewPage.getByText('Multiple - demo field name*')).toBeVisible();
+
+        await previewPage.close()
+    }
 };

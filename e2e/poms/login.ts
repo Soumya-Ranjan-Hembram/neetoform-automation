@@ -16,7 +16,7 @@ export default class LoginPage {
         password: string;
         username: string;
     }) => {
-        await this.page.goto("https://neeto-form-web-playwright.neetodeployapp.com/")
+        await this.page.goto("https://neeto-form-web-playwright.neetodeployapp.com")
 
         await this.page.locator('[data-test-id="login-email"]').fill(email);
         await this.page.locator('[data-test-id="login-password"]').fill(password);

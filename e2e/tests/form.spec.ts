@@ -20,11 +20,14 @@ test.describe("Form page", () => {
         await page.goto("/")
     })
 
+    test.afterEach(async ({ page }) => {
+        await page.close();
+    });
+
 
     test("should create a form from scratch and publish it. [SKIP_SETUP]", async ({
         page,
         context,
-        loginPage,
         formPage
     }) => {
         await page.goto("/");
@@ -36,7 +39,8 @@ test.describe("Form page", () => {
         // });
 
         await formPage.createNewForm();
-        await formPage.addFormFieldsAndUpdateFormName({ formName });
+        await formPage.updateFormName({ formName });
+        await formPage.addFormFields();
         await formPage.publishForm();
 
         const previewPage = await formPage.openPublishedForm(context);
@@ -62,5 +66,29 @@ test.describe("Form page", () => {
             // phoneNumber
         })
 
+    })
+
+    test("should create a new form for customizing single and multi choice elements.", async ({
+        page,
+        context,
+        formPage
+    }) => {
+        await page.goto("/");
+
+        await formPage.createNewForm();
+        await formPage.updateFormName({ formName });
+        await formPage.addSingleAndMultiChoiceElement();
+        await formPage.addBulkOptionsToElements();
+        await formPage.hideMultiChoiceElement();
+        await formPage.publishForm();
+
+        const previewPage1 = await formPage.openPublishedForm(context);
+        await formPage.validateMultipleIsHiddenAndSingleIsVisible(previewPage1);
+
+        await formPage.unhideMultiChoiceElement();
+        await formPage.publishForm();
+
+        const previewPage2 = await formPage.openPublishedForm(context);
+        await formPage.validateBothMultipleAndSingleIsVisible(previewPage2);
     })
 })
