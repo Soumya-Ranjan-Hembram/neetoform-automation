@@ -1,4 +1,5 @@
 import { BrowserContext, Page, expect } from "@playwright/test";
+import { FORM_SELECTORS, FORM_TEXTS } from "../constants/selectors/form";
 interface FormName {
     formName: string;
 }
@@ -10,52 +11,65 @@ export default class FormPage {
     }
 
     createNewForm = async () => {
-        await this.page.getByRole('button', { name: 'Add new form' }).click();
-        await expect(this.page.getByText(/Start from scratchA blank/i)).toBeVisible({ timeout: 5000 });
-        await this.page.getByText(/Start from scratchA blank/i).click();
+        await this.page.getByTestId(FORM_SELECTORS.addFormButton).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.startFromScratch)).toBeVisible({ timeout: 5000 });
+        await this.page.getByTestId(FORM_SELECTORS.startFromScratch).click();
     }
 
 
     updateFormName = async ({ formName }: FormName) => {
-        await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
-        await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
-        await this.page.getByTestId('neeto-molecules-value-display').click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.elementContainer)).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
-        await expect(this.page.getByTestId('neeto-molecules-name-input')).toBeVisible();
-
-        const nameInput = this.page.getByTestId('neeto-molecules-name-input');
+        await this.page.getByTestId(FORM_SELECTORS.neetoFormTitle).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.neetoFormTitleField)).toBeVisible();
+        const nameInput = this.page.getByTestId(FORM_SELECTORS.neetoFormTitleField);
         await nameInput.fill("");
-
         await nameInput.fill(formName);
-        await this.page.getByTestId('neeto-molecules-rename-button').click()
 
-        await expect(this.page.getByText(formName)).toBeVisible({ timeout: 5000 });
+        await this.page.getByTestId(FORM_SELECTORS.neetoFormTitleFieldSubmitButton).click();
+        const actualText = (await this.page.getByTestId(FORM_SELECTORS.neetoFormTitle).textContent()) || "";
+        await expect(actualText.trim()).toBe(formName);
+
     }
 
 
     addFormFields = async () => {
-        await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
-        await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.elementContainer)).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
-        await this.page.getByTestId('elements-container').getByRole('button', { name: 'Full name' }).click();
-        await this.page.getByTestId('elements-container').getByRole('button', { name: 'Phone number' }).click();
+        await this.page.getByTestId(FORM_SELECTORS.fullNameElement).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.fullNamePreview)).toBeVisible();
+        await this.page.getByTestId(FORM_SELECTORS.phoneNumberElement).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.phoneNumberPreview)).toBeVisible();
     }
 
     publishForm = async () => {
-        await this.page.getByTestId("publish-button").click();
-    }
+        await this.page.getByTestId(FORM_SELECTORS.publishButton).click();
 
-    /**
-     * @Refer : https://playwright.dev/docs/pages#handling-new-pages
-     * How to handle new page.
-     * */
+        const toastMessages = this.page.getByTestId(FORM_SELECTORS.toastContainer);
+
+        await expect(toastMessages.first()).toBeVisible({ timeout: 5000 });
+
+        const toastCount = await toastMessages.count();
+        let found = false;
+        for (let i = 0; i < toastCount; i++) {
+            const message = await toastMessages.nth(i).textContent();
+            if (message?.includes("The form is successfully published")) {
+                found = true;
+                break;
+            }
+        }
+
+        expect(found).toBeTruthy();
+    };
+
 
     openPublishedForm = async (context: BrowserContext) => {
         const pagePromise = context.waitForEvent("page");
-        await this.page.getByTestId("publish-preview-button").click();
+        await this.page.getByTestId(FORM_SELECTORS.publishPreviewButton).click();
 
         const previewPage = await pagePromise;
-        // await previewPage.waitForLoadState("domcontentloaded");
         await previewPage.waitForLoadState("domcontentloaded", { timeout: 60000 });
 
 
@@ -65,49 +79,43 @@ export default class FormPage {
 
 
     verifyFields = async (previewPage: Page) => {
-        const emailInputField = previewPage.locator("[data-cy='email-text-field']");
+        const emailInputField = previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
         await expect(emailInputField).toBeVisible();
 
-        const firstNameInputField = previewPage.locator("[data-cy='full-name-fields']").locator("input").nth(0);
+        const firstNameInputField = previewPage.getByTestId(FORM_SELECTORS.previewFirstNameTextField);
         await expect(firstNameInputField).toBeVisible();
 
-        const lastNameInputField = previewPage.locator("[data-cy='full-name-fields']").locator("input").nth(1);
+        const lastNameInputField = previewPage.getByTestId(FORM_SELECTORS.previewLastNameTextField);
         await expect(lastNameInputField).toBeVisible();
 
-        const numberInputField = previewPage.locator("[data-cy='phone-number-input-field']");
+        const numberInputField = previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField);
         await expect(numberInputField).toBeVisible();
-
-        // Uncomment the below lines if you want to fill in the fields
-        // await emailInputField.fill('test@example.com');
-        // await firstNameInputField.fill('John');
-        // await lastNameInputField.fill('Doe');
-        // await numberInputField.fill('9827392493');
     };
 
 
     validateFieldErrors = async (previewPage: Page) => {
 
-        await previewPage.getByRole("button", { name: "Submit" }).click();
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
 
 
-        await expect(previewPage.getByText(/Email address is required/i)).toBeVisible();
-        await expect(previewPage.getByText(/First name is required/i)).toBeVisible();
-        await expect(previewPage.getByText(/Last name is required/i)).toBeVisible();
-        await expect(previewPage.getByText(/Phone number is invalid/i)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.requiredEmailFieldErrorMessage)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.requiredFirstNameFieldErrorMessage)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.requiredLastNameFieldErrorMessage)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.requiredPhoneNumberFieldErrorMessage)).toBeVisible();
 
 
-        await previewPage.locator("[data-cy='email-text-field']").fill("soumya");
-        await previewPage.locator("[data-cy='phone-number-input-field']").fill("1");
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill("soumya");
+        await previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField).fill("1");
 
 
-        await previewPage.getByRole("button", { name: "Submit" }).click();
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+
+        await expect(previewPage.getByText(FORM_TEXTS.emailInvalidErrorMessage)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.USNumberFormatErrorMessage)).toBeVisible();
 
 
-        await expect(previewPage.getByText(/Email address is invalid/i)).toBeVisible();
-        await expect(previewPage.getByText(/US numbers cannot start with a one./i)).toBeVisible();
-
-        await previewPage.locator("[data-cy='email-text-field']").fill("");
-        await previewPage.locator("[data-cy='phone-number-input-field']").fill("");
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill("");
+        await previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField).fill("");
     };
 
     fillAndSubmitForm = async (previewPage: Page, {
@@ -116,19 +124,19 @@ export default class FormPage {
         email,
         phoneNumber
     }) => {
-        await previewPage.locator("[data-cy='first-name-text-field']").fill(firstName);
-        await previewPage.locator("[data-cy='last-name-text-field']").fill(lastName);
-        await previewPage.locator("[data-cy='email-text-field']").fill(email);
-        await previewPage.locator("[data-cy='phone-number-input-field']").fill(phoneNumber); // US Number
+        await previewPage.getByTestId(FORM_SELECTORS.previewFirstNameTextField).fill(firstName);
+        await previewPage.getByTestId(FORM_SELECTORS.previewLastNameTextField).fill(lastName);
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill(email);
+        await previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField).fill(phoneNumber);
 
         await Promise.all([
-            previewPage.waitForURL(/thank-you/),
-            previewPage.getByRole("button", { name: "Submit" }).click()
+            previewPage.waitForURL(FORM_TEXTS.thankYouURL),
+            previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click()
         ]);
 
-        await expect(previewPage.locator("[data-cy='thank-you-page-message']")).toBeVisible();
-        await expect(previewPage.getByText("Thank You.")).toBeVisible();
-        await expect(previewPage.getByText("Your response has been received.")).toBeVisible();
+        await expect(previewPage.getByTestId(FORM_SELECTORS.thankYouMessage)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.thankYou)).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.responseReceived)).toBeVisible();
 
         await previewPage.close();
 
@@ -138,115 +146,108 @@ export default class FormPage {
         firstName,
         lastName,
         email,
-        // phoneNumber
     }) => {
-        await this.page.goto("/")
+        await expect(this.page.getByTestId(FORM_SELECTORS.submissionTab)).toBeVisible();
 
-        await expect(this.page.getByRole('button', { name: formName })).toBeVisible({ timeout: 30000 });
-        await this.page.getByRole('button', { name: formName }).click();
-        await expect(this.page.getByRole('link', { name: 'Submissions' })).toBeVisible();
-
-        await this.page.getByRole('link', { name: 'Submissions' }).click();
+        await this.page.getByTestId(FORM_SELECTORS.submissionTab).click();
 
         const fullName = `${firstName} ${lastName}`;
-        // const fullPhone = "+1 " + phoneNumber
 
         await expect(this.page.getByText(fullName)).toBeVisible();
         await expect(this.page.getByText(email)).toBeVisible();
-        // await expect(this.page.getByText(fullPhone)).toBeVisible();
-
         await this.page.close();
 
     }
 
-    addSingleAndMultiChoiceElement = async () => {
+    addSingleChoiceElement = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.elementContainer)).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
-        await expect(this.page.getByTestId('elements-container')).toBeVisible({ timeout: 30000 });
-        await expect(this.page.getByTestId('publish-button')).toBeVisible({ timeout: 30000 });
+        await this.page.getByTestId(FORM_SELECTORS.singleChoiceElement).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0)).toBeVisible();
+    };
 
-        await this.page.getByRole('button', { name: 'Single choice' }).click();
-        await this.page.getByRole('button', { name: 'Multi choice' }).click();
+    addMultiChoiceElement = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.elementContainer)).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
-
-    }
+        await this.page.getByTestId(FORM_SELECTORS.multiChoiceElement).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1)).toBeVisible();
+    };
 
     addBulkOptionsToElements = async () => {
+        const singleChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0);
+        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
 
-        const singleChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(1);
-        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
+        await expect(singleChoicePreviewComponent).toBeVisible();
+        await expect(multiChoicePreviewComponent).toBeVisible();
 
-        await expect(singleChoiceEle).toBeVisible();
-        await expect(multiChoiceEle).toBeVisible();
+        await this.addBulkOptions(singleChoicePreviewComponent, FORM_TEXTS.singleDemoFieldName);
+        await this.addBulkOptions(multiChoicePreviewComponent, FORM_TEXTS.multiDemoFieldName);
+    };
 
-        await singleChoiceEle.click();
-        await this.page.getByRole('textbox', { name: 'Question' }).fill("Single - demo field name");
-        await this.page.getByTestId('add-bulk-option-link').click();
+    addBulkOptions = async (choiceElement, fieldName) => {
+        await choiceElement.click();
+        await this.page.getByTestId(FORM_SELECTORS.contentTextField).fill(fieldName);
+        await this.page.getByTestId(FORM_SELECTORS.addBulkOptionLink).click();
 
-        await expect(this.page.getByTestId('bulk-add-options-textarea')).toBeVisible();
-        await expect(this.page.locator("[data-testid='bulk-add-options-done-button']")).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.bulkOptionsTextArea)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.bulkOptionsDoneButton)).toBeVisible();
 
-
-        await this.page.getByTestId('bulk-add-options-textarea').fill("Option 5, Option 6, Option 7, Option 8, Option 9, Option 10");
-        // await this.page.getByTestId('bulk-add-options-done-button').click();
-        await this.page.locator("[data-testid='bulk-add-options-done-button']").click();
+        await this.page.getByTestId(FORM_SELECTORS.bulkOptionsTextArea).fill("Option 5, Option 6, Option 7, Option 8, Option 9, Option 10");
+        await this.page.getByTestId(FORM_SELECTORS.bulkOptionsDoneButton).click();
         await this.page.waitForTimeout(2000);
+    };
 
-        // In future separate this randomzie option from this block.
+    enableRandomization = async (choiceElement) => {
+        await choiceElement.click();
+        await this.page.getByTestId(FORM_SELECTORS.randomizeSwitchLabel).click();
 
-        await this.page.getByText("Randomize").click()
-        await expect(this.page.getByText("Options will be displayed in random order")).toBeVisible();
+        const warningText = await this.page.getByTestId(FORM_SELECTORS.randomizeWarningError).textContent();
+        expect(warningText?.trim()).toBe(FORM_TEXTS.waringTextRandomization);
+    };
 
+    addRandomizationToSingleChoice = async () => {
+        const singleChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0);
 
-
-        await multiChoiceEle.click();
-        await this.page.getByRole('textbox', { name: 'Question' }).fill("Multiple - demo field name");
-        await this.page.getByTestId('add-bulk-option-link').click()
-
-        await expect(this.page.getByTestId('bulk-add-options-textarea')).toBeVisible();
-        await expect(this.page.locator("[data-testid='bulk-add-options-done-button']")).toBeVisible();
-
-        await this.page.getByTestId('bulk-add-options-textarea').fill("Option 5, Option 6, Option 7, Option 8, Option 9, Option 10");
-        await this.page.locator("[data-testid='bulk-add-options-done-button']").click();
-        await this.page.waitForTimeout(2000);
-
-
-        // const optionsCount = await this.page.locator("[data-rfd-droppable-id='neeto-molecules-option-fields-options']").c;
-        // console.log(`Options count: ${optionsCount}`);
-
-        // await expect(optionsCount).toBe(10);
-
-        // getByText('Hide question')
-        // This field is hidden to the public. However, you can still edit it
-    }
+        await this.enableRandomization(singleChoicePreviewComponent);
+    };
 
 
     hideMultiChoiceElement = async () => {
-        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
-        await multiChoiceEle.click();
-        await this.page.getByText('Hide question').click();
-        await expect(this.page.getByText("This field is hidden to the public. However, you can still edit it")).toBeVisible();
+        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
+        await multiChoicePreviewComponent.click();
+        await this.page.getByTestId(FORM_SELECTORS.questionHideToggle).click();
+
+        const warningMessage = await this.page.getByTestId(FORM_SELECTORS.questionHideWarning).textContent();
+        expect(warningMessage?.trim()).toBe(FORM_TEXTS.questionHideWaringMessage)
+
+        await this.page.waitForTimeout(1000);
     };
 
     unhideMultiChoiceElement = async () => {
-        const multiChoiceEle = this.page.getByRole('button', { name: 'Question' }).nth(2);
-        await multiChoiceEle.click();
-        await this.page.getByText('Hide question').click();
+        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
+        await multiChoicePreviewComponent.click();
+        await this.page.getByTestId(FORM_SELECTORS.questionHideToggle).click();
     };
+
+
 
     validateMultipleIsHiddenAndSingleIsVisible = async (previewPage: Page) => {
 
-        await expect(previewPage.getByText('Single - demo field name*')).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.singleDemoFieldImportant)).toBeVisible();
 
-        await expect(previewPage.getByText('Multiple - demo field name*')).not.toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.multiDemoFieldImportant)).not.toBeVisible({ timeout: 10000 });
+
 
         await previewPage.close()
     }
 
     validateBothMultipleAndSingleIsVisible = async (previewPage) => {
 
-        await expect(previewPage.getByText('Single - demo field name*')).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.singleDemoFieldImportant)).toBeVisible();
 
-        await expect(previewPage.getByText('Multiple - demo field name*')).toBeVisible();
+        await expect(previewPage.getByText(FORM_TEXTS.multiDemoFieldImportant)).toBeVisible();
 
         await previewPage.close()
     }

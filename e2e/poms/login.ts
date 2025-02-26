@@ -1,5 +1,5 @@
 import { Page, expect } from "@playwright/test";
-
+import { LOGIN_SELECTORS } from "../constants/selectors/login";
 export default class LoginPage {
     page: Page;
 
@@ -16,13 +16,13 @@ export default class LoginPage {
         password: string;
         username: string;
     }) => {
-        await this.page.goto("https://neeto-form-web-playwright.neetodeployapp.com")
 
-        await this.page.locator('[data-test-id="login-email"]').fill(email);
-        await this.page.locator('[data-test-id="login-password"]').fill(password);
-        await expect(this.page.locator('[data-test-id="login-submit-button"]')).toBeEnabled({ timeout: 10000 });
-        await this.page.locator('[data-test-id="login-submit-button"]').click();
+        await this.page.getByTestId(LOGIN_SELECTORS.emailField).fill(email)
+        await this.page.getByTestId(LOGIN_SELECTORS.passwordField).fill(password)
 
-        await expect(this.page.getByRole('button', { name: `avatar-${username}` })).toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByTestId(LOGIN_SELECTORS.loginButton)).toBeEnabled({ timeout: 10000 });
+        await this.page.getByTestId(LOGIN_SELECTORS.loginButton).click();
+
+        await expect(this.page.getByTestId(LOGIN_SELECTORS.floatingActionSideBar)).toBeVisible({ timeout: 10000 });
     }
 }

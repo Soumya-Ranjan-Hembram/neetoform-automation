@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "../fixture";
 import { faker } from "@faker-js/faker";
+
 test.describe("Form page", () => {
     let formName: string;
     let firstName: string;
@@ -8,87 +9,100 @@ test.describe("Form page", () => {
     let email: string;
     let phoneNumber: string;
 
-    test.beforeEach(async ({ page, formPage }, testInfo) => {
-        formName = faker.word.sample(10)
+    test.beforeEach(async ({ page }, testInfo) => {
+        formName = faker.word.sample(10);
         firstName = faker.person.firstName();
         lastName = faker.person.lastName();
         email = faker.internet.email();
-        // phoneNumber = faker.phone.number({ style: "international" }).substring(1, 11)
         phoneNumber = "2025550123";
 
         if (testInfo.title.includes("[SKIP_SETUP]")) return;
-        await page.goto("/")
-    })
+        await page.goto("/");
+    });
 
     test.afterEach(async ({ page }) => {
         await page.close();
     });
 
+    test("should create and submit a form", async ({ page, context, formPage }) => {
+        let previewPage;
 
-    test("should create a form from scratch and publish it.[SKIP_SETUP]", async ({
-        page,
-        context,
-        formPage
-    }) => {
-        await page.goto("/");
-
-        // await loginPage.loginAndVerifyUser({
-        //     email: "oliver@example.com",
-        //     password: "welcome",
-        //     username: "Oliver Smith"
-        // });
-
-        await formPage.createNewForm();
-        await formPage.updateFormName({ formName });
-        await formPage.addFormFields();
-        await formPage.publishForm();
-
-        const previewPage = await formPage.openPublishedForm(context);
-
-        await formPage.verifyFields(previewPage);
-
-        await formPage.validateFieldErrors(previewPage);
-
-        await formPage.fillAndSubmitForm(previewPage, {
-            firstName,
-            lastName,
-            email,
-            phoneNumber
+        await test.step("[STEP-1] Clicked on add new form", async () => {
+            await formPage.createNewForm();
         });
 
+        await test.step("[STEP-2] Update form name", async () => {
+            await formPage.updateFormName({ formName });
+        });
 
-        await formPage.validateTheSubmissionFields({
-            formName
-        }, {
-            firstName,
-            lastName,
-            email,
-            // phoneNumber
-        })
+        await test.step("[STEP-3] Add full name and phone number fields", async () => {
+            await formPage.addFormFields();
+        });
 
-    })
+        await test.step("[STEP-4] Publish the form", async () => {
+            await formPage.publishForm();
 
-    test("should create a new form for customizing single and multi choice elements.[SKIP_SETUP]", async ({
-        page,
-        context,
-        formPage
-    }) => {
-        await page.goto("/");
+            previewPage = await formPage.openPublishedForm(context);
 
-        await formPage.createNewForm();
-        await formPage.updateFormName({ formName });
-        await formPage.addSingleAndMultiChoiceElement();
-        await formPage.addBulkOptionsToElements();
-        await formPage.hideMultiChoiceElement();
-        await formPage.publishForm();
+            await formPage.verifyFields(previewPage);
+        });
 
-        const previewPage1 = await formPage.openPublishedForm(context);
-        await formPage.validateMultipleIsHiddenAndSingleIsVisible(previewPage1);
+        await test.step("[STEP-5] Validate field errors", async () => {
+            await formPage.validateFieldErrors(previewPage);
+        });
 
-        await formPage.unhideMultiChoiceElement();
-        await formPage.publishForm();
+        await test.step("[STEP-6] Fill and submit the form", async () => {
+            await formPage.fillAndSubmitForm(previewPage, {
+                firstName,
+                lastName,
+                email,
+                phoneNumber
+            });
+        });
 
-        const previewPage2 = await formPage.openPublishedForm(context);
-        await formPage.validateBothMultipleAndSingleIsVisible(previewPage2);
-    })
-})
+        await test.step("[STEP-7] Validate submission fields", async () => {
+            await formPage.validateTheSubmissionFields(
+                { formName },
+                { firstName, lastName, email }
+            );
+        });
+    });
+
+
+    test("should customize form's field elements", async ({ page, context, formPage }) => {
+        await test.step("[STEP-1] Create a new form and update name", async () => {
+            await formPage.createNewForm();
+            await formPage.updateFormName({ formName });
+        });
+
+        await test.step("[STEP-2] Add single and multi-choice elements", async () => {
+            await formPage.addSingleChoiceElement();
+            await formPage.addMultiChoiceElement();
+        });
+
+        await test.step("[STEP-3] Add six more options and randomize single choice", async () => {
+            await formPage.addBulkOptionsToElements();
+            await formPage.addRandomizationToSingleChoice();
+        });
+
+        await test.step("[STEP-4] Hide multi-choice element and publish form", async () => {
+            await formPage.hideMultiChoiceElement();
+            await formPage.publishForm();
+        });
+
+        await test.step("[STEP-5] Verify hidden and randomized elements", async () => {
+            const previewPage1 = await formPage.openPublishedForm(context);
+            await formPage.validateMultipleIsHiddenAndSingleIsVisible(previewPage1);
+        });
+
+        await test.step("[STEP-6] Unhide multi-choice element and republish", async () => {
+            await formPage.unhideMultiChoiceElement();
+            await formPage.publishForm();
+        });
+
+        await test.step("[STEP-7] Verify both fields are visible in published form", async () => {
+            const previewPage2 = await formPage.openPublishedForm(context);
+            await formPage.validateBothMultipleAndSingleIsVisible(previewPage2);
+        });
+    });
+});

@@ -6,8 +6,8 @@ test.describe("Login page", () => {
         page,
         loginPage
     }) => {
-        await page.goto("https://neeto-form-web-playwright.neetodeployapp.com/")
 
+        page.goto("/")
         await loginPage.loginAndVerifyUser({
             email: "oliver@example.com",
             password: "welcome",
