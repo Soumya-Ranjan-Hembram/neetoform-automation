@@ -25,7 +25,7 @@ test.describe("Form page", () => {
     });
 
 
-    test("should create a form from scratch and publish it. [SKIP_SETUP]", async ({
+    test("should create a form from scratch and publish it.[SKIP_SETUP]", async ({
         page,
         context,
         formPage
@@ -68,7 +68,7 @@ test.describe("Form page", () => {
 
     })
 
-    test("should create a new form for customizing single and multi choice elements.", async ({
+    test("should create a new form for customizing single and multi choice elements.[SKIP_SETUP]", async ({
         page,
         context,
         formPage
