@@ -23,23 +23,22 @@ test.describe("Form page", () => {
     test.afterEach(async ({ page }) => {
         await page.close();
     });
-
     test("should create and submit a form", async ({ page, context, formPage }) => {
         let previewPage;
 
-        await test.step("[STEP-1] Clicked on add new form", async () => {
+        await test.step("Step 1: Clicked on add new form", async () => {
             await formPage.createNewForm();
         });
 
-        await test.step("[STEP-2] Update form name", async () => {
+        await test.step("Step 2: Update form name", async () => {
             await formPage.updateFormName({ formName });
         });
 
-        await test.step("[STEP-3] Add full name and phone number fields", async () => {
+        await test.step("Step 3: Add full name and phone number fields", async () => {
             await formPage.addFormFields();
         });
 
-        await test.step("[STEP-4] Publish the form", async () => {
+        await test.step("Step 4: Publish the form", async () => {
             await formPage.publishForm();
 
             previewPage = await formPage.openPublishedForm(context);
@@ -47,11 +46,11 @@ test.describe("Form page", () => {
             await formPage.verifyFields(previewPage);
         });
 
-        await test.step("[STEP-5] Validate field errors", async () => {
+        await test.step("Step 5: Validate field errors", async () => {
             await formPage.validateFieldErrors(previewPage);
         });
 
-        await test.step("[STEP-6] Fill and submit the form", async () => {
+        await test.step("Step 6: Fill and submit the form", async () => {
             await formPage.fillAndSubmitForm(previewPage, {
                 firstName,
                 lastName,
@@ -60,7 +59,7 @@ test.describe("Form page", () => {
             });
         });
 
-        await test.step("[STEP-7] Validate submission fields", async () => {
+        await test.step("Step 7: Validate submission fields", async () => {
             await formPage.validateTheSubmissionFields(
                 { formName },
                 { firstName, lastName, email }
@@ -70,39 +69,77 @@ test.describe("Form page", () => {
 
 
     test("should customize form's field elements", async ({ page, context, formPage }) => {
-        await test.step("[STEP-1] Create a new form and update name", async () => {
+        await test.step("Step 1: Create a new form and update name", async () => {
             await formPage.createNewForm();
             await formPage.updateFormName({ formName });
         });
 
-        await test.step("[STEP-2] Add single and multi-choice elements", async () => {
+        await test.step("Step 2: Add single and multi-choice elements", async () => {
             await formPage.addSingleChoiceElement();
             await formPage.addMultiChoiceElement();
         });
 
-        await test.step("[STEP-3] Add six more options and randomize single choice", async () => {
+        await test.step("Step 3: Add six more options and randomize single choice", async () => {
             await formPage.addBulkOptionsToElements();
             await formPage.addRandomizationToSingleChoice();
         });
 
-        await test.step("[STEP-4] Hide multi-choice element and publish form", async () => {
+        await test.step("Step 4: Hide multi-choice element and publish form", async () => {
             await formPage.hideMultiChoiceElement();
             await formPage.publishForm();
         });
 
-        await test.step("[STEP-5] Verify hidden and randomized elements", async () => {
+        await test.step("Step 5: Verify hidden and randomized elements", async () => {
             const previewPage1 = await formPage.openPublishedForm(context);
             await formPage.validateMultipleIsHiddenAndSingleIsVisible(previewPage1);
         });
 
-        await test.step("[STEP-6] Unhide multi-choice element and republish", async () => {
+        await test.step("Step 6: Unhide multi-choice element and republish", async () => {
             await formPage.unhideMultiChoiceElement();
             await formPage.publishForm();
         });
 
-        await test.step("[STEP-7] Verify both fields are visible in published form", async () => {
+        await test.step("Step 7: Verify both fields are visible in published form", async () => {
             const previewPage2 = await formPage.openPublishedForm(context);
             await formPage.validateBothMultipleAndSingleIsVisible(previewPage2);
         });
     });
+
+
+    test("should verfy form insights", async ({
+        page,
+        context,
+        formPage
+    }) => {
+        let previewPage;
+
+        await test.step("Step 1: Create a new form and update name", async () => {
+            await formPage.createNewForm();
+            await formPage.updateFormName({ formName });
+        });
+        await test.step("Step 2: Publish form and goto analytics page", async () => {
+            await formPage.publishFormForVerifyInsight();
+
+        });
+
+        await test.step("Step 3: visit preview page and check the visits count", async () => {
+            await formPage.verifyInitialInsights()
+
+            previewPage = await formPage.openPublishedForm(context);
+
+            await formPage.visitPreviewPageAndVerifyEmailField(previewPage);
+        });
+
+        await test.step("Step 4: verify count increments", async () => {
+            await formPage.verifyVisitCountIncrease(context);
+
+            await formPage.verifyStartCountIncrease(context)
+        });
+
+        await test.step("Step 5: verify submission count increment", async () => {
+            await formPage.verifySubmissionCountIncrease(context);
+        })
+    });
+
+
 });

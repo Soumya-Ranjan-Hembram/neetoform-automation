@@ -6,8 +6,22 @@ interface FormName {
 export default class FormPage {
     page: Page;
 
+    visitCount: number = 0;
+    startCount: number = 0;
+    submissionCount: number = 0;
+    completionRate: number = 0;
+
     constructor(page: Page) {
         this.page = page;
+    }
+
+    increaseVisitCount = () => this.visitCount += 1;
+    increaseStartCount = () => this.startCount += 1;
+    increaseSubmissionCount = () => this.submissionCount += 1;
+    getCompletionRate = () => {
+        if (this.submissionCount === 0) return this.completionRate = 0;
+
+        this.completionRate = ((this.submissionCount / this.startCount) * 100)
     }
 
     createNewForm = async () => {
@@ -49,13 +63,14 @@ export default class FormPage {
 
         const toastMessages = this.page.getByTestId(FORM_SELECTORS.toastContainer);
 
-        await expect(toastMessages.first()).toBeVisible({ timeout: 5000 });
+        await expect(toastMessages.first()).toBeVisible({ timeout: 3000 });
+
 
         const toastCount = await toastMessages.count();
         let found = false;
         for (let i = 0; i < toastCount; i++) {
             const message = await toastMessages.nth(i).textContent();
-            if (message?.includes("The form is successfully published")) {
+            if (message?.includes(FORM_TEXTS.theFormPublishedSuccessfully)) {
                 found = true;
                 break;
             }
@@ -64,6 +79,14 @@ export default class FormPage {
         expect(found).toBeTruthy();
     };
 
+
+    publishFormForVerifyInsight = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.publishButton).click({ timeout: 300 });
+
+        const toastMessages = this.page.getByTestId(FORM_SELECTORS.toastContainer);
+
+        await expect(toastMessages.first()).toBeEnabled({ timeout: 3000 });
+    }
 
     openPublishedForm = async (context: BrowserContext) => {
         const pagePromise = context.waitForEvent("page");
@@ -104,8 +127,8 @@ export default class FormPage {
         await expect(previewPage.getByText(FORM_TEXTS.requiredPhoneNumberFieldErrorMessage)).toBeVisible();
 
 
-        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill("soumya");
-        await previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField).fill("1");
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill(FORM_TEXTS.falseEmail);
+        await previewPage.getByTestId(FORM_SELECTORS.previewPhoneNumberInputField).fill(FORM_TEXTS.unUseNumber);
 
 
         await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
@@ -164,7 +187,7 @@ export default class FormPage {
         await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
         await this.page.getByTestId(FORM_SELECTORS.singleChoiceElement).click();
-        await expect(this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.choicePreviewGroup).filter({ has: this.page.getByTestId(FORM_SELECTORS.singleChoiceContainer) })).toBeVisible();
     };
 
     addMultiChoiceElement = async () => {
@@ -172,12 +195,18 @@ export default class FormPage {
         await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
 
         await this.page.getByTestId(FORM_SELECTORS.multiChoiceElement).click();
-        await expect(this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.choicePreviewGroup).filter({ has: this.page.getByTestId(FORM_SELECTORS.multiChoiceContainer) })).toBeVisible();
     };
 
     addBulkOptionsToElements = async () => {
-        const singleChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0);
-        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
+        const singleChoicePreviewComponent = this.page
+            .getByTestId(FORM_SELECTORS.choicePreviewGroup)
+            .filter({ has: this.page.getByTestId(FORM_SELECTORS.singleChoiceContainer) });
+
+        const multiChoicePreviewComponent = this.page
+            .getByTestId(FORM_SELECTORS.choicePreviewGroup)
+            .filter({ has: this.page.getByTestId(FORM_SELECTORS.multiChoiceContainer) });
+
 
         await expect(singleChoicePreviewComponent).toBeVisible();
         await expect(multiChoicePreviewComponent).toBeVisible();
@@ -208,14 +237,15 @@ export default class FormPage {
     };
 
     addRandomizationToSingleChoice = async () => {
-        const singleChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(0);
+        const singleChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.choicePreviewGroup).filter({ has: this.page.getByTestId(FORM_SELECTORS.singleChoiceContainer) });
 
         await this.enableRandomization(singleChoicePreviewComponent);
     };
 
 
     hideMultiChoiceElement = async () => {
-        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
+        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.choicePreviewGroup).filter({ has: this.page.getByTestId(FORM_SELECTORS.multiChoiceContainer) });
+
         await multiChoicePreviewComponent.click();
         await this.page.getByTestId(FORM_SELECTORS.questionHideToggle).click();
 
@@ -226,7 +256,8 @@ export default class FormPage {
     };
 
     unhideMultiChoiceElement = async () => {
-        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.singleChoicePreviewGroup).nth(1);
+        const multiChoicePreviewComponent = this.page.getByTestId(FORM_SELECTORS.choicePreviewGroup).filter({ has: this.page.getByTestId(FORM_SELECTORS.multiChoiceContainer) });
+
         await multiChoicePreviewComponent.click();
         await this.page.getByTestId(FORM_SELECTORS.questionHideToggle).click();
     };
@@ -240,7 +271,7 @@ export default class FormPage {
         await expect(previewPage.getByText(FORM_TEXTS.multiDemoFieldImportant)).not.toBeVisible({ timeout: 10000 });
 
 
-        await previewPage.close()
+        await previewPage.close();
     }
 
     validateBothMultipleAndSingleIsVisible = async (previewPage) => {
@@ -249,6 +280,103 @@ export default class FormPage {
 
         await expect(previewPage.getByText(FORM_TEXTS.multiDemoFieldImportant)).toBeVisible();
 
-        await previewPage.close()
+        await previewPage.close();
+    };
+    visitPreviewPageAndVerifyEmailField = async (previewPage: Page) => {
+        const emailInputField = previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
+        await expect(emailInputField).toBeVisible();
+        previewPage.close();
     }
+
+    gotoAnalyticsTab = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.moreDropdownIcon).click();
+        await this.page.getByTestId(FORM_SELECTORS.analyticsTab).click();
+
+        await expect(this.page.getByTestId(FORM_SELECTORS.submissionInsightTitle)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.visitMetric).getByTestId(FORM_SELECTORS.insightCount)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.startMetric).getByTestId(FORM_SELECTORS.insightCount)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.submissionMetric).getByTestId(FORM_SELECTORS.insightCount)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.completionRateMetric).getByTestId(FORM_SELECTORS.insightCount)).toBeVisible();
+
+    }
+
+    gotoBuildTab = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.buildTab).click()
+        await expect(this.page.getByTestId(FORM_SELECTORS.elementContainer)).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByTestId(FORM_SELECTORS.publishButton)).toBeVisible({ timeout: 30000 });
+    }
+
+    verifyInitialInsights = async () => {
+        await this.gotoAnalyticsTab();
+
+        const visitCountOnPage = await this.page.getByTestId(FORM_SELECTORS.visitMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const startCountOnPage = await this.page.getByTestId(FORM_SELECTORS.startMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const submissionCountOnPage = await this.page.getByTestId(FORM_SELECTORS.submissionMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const completionRateOnPage = await this.page.getByTestId(FORM_SELECTORS.completionRateMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+
+        expect(visitCountOnPage).toBe(String(this.visitCount));
+        expect(startCountOnPage).toBe(String(this.startCount));
+        expect(submissionCountOnPage).toBe(String(this.submissionCount));
+        expect(completionRateOnPage).toBe(`${this.completionRate}%`);
+
+        await this.gotoBuildTab();
+    };
+
+    verifyVisitCountIncrease = async (context: BrowserContext) => {
+        const previewPage = await this.openPublishedForm(context);
+        this.increaseVisitCount()
+        await previewPage.close();
+
+        await this.gotoAnalyticsTab();
+        await this.page.reload();
+        const visitCount = await this.page.getByTestId(FORM_SELECTORS.visitMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        expect(visitCount).toBe(String(this.visitCount));
+        await this.gotoBuildTab();
+    };
+
+
+    verifyStartCountIncrease = async (context: BrowserContext) => {
+        const previewPage = await this.openPublishedForm(context);
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill(FORM_TEXTS.falseEmail);
+        this.increaseVisitCount();
+        this.increaseStartCount();
+        await previewPage.close();
+
+        await this.gotoAnalyticsTab();
+        await this.page.reload();
+
+        const visitCountOnPage = await this.page.getByTestId(FORM_SELECTORS.visitMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const startCountOnPage = await this.page.getByTestId(FORM_SELECTORS.startMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+
+        expect(visitCountOnPage).toBe(String(this.visitCount));
+        expect(startCountOnPage).toBe(String(this.startCount));
+
+        await this.gotoBuildTab();
+    };
+
+    verifySubmissionCountIncrease = async (context: BrowserContext) => {
+        const previewPage: Page = await this.openPublishedForm(context);
+
+        await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill(FORM_TEXTS.simpleEmail);
+        this.increaseVisitCount();
+
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+        this.increaseSubmissionCount()
+        this.getCompletionRate();
+        await previewPage.close();
+
+        await this.gotoAnalyticsTab();
+
+        await this.page.reload();
+
+        const visitCount = await this.page.getByTestId(FORM_SELECTORS.visitMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const startCount = await this.page.getByTestId(FORM_SELECTORS.startMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const submissionCount = await this.page.getByTestId(FORM_SELECTORS.submissionMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        const completionRate = await this.page.getByTestId(FORM_SELECTORS.completionRateMetric).getByTestId(FORM_SELECTORS.insightCount).textContent();
+        expect(visitCount).toBe(String(this.visitCount));
+        expect(startCount).toBe(String(this.startCount));
+        expect(submissionCount).toBe(String(this.submissionCount));
+        expect(completionRate).toBe(String(this.completionRate) + "%");
+    };
+
 };

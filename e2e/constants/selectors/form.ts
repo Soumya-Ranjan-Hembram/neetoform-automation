@@ -35,16 +35,33 @@ export const FORM_SELECTORS = {
     randomizeSwitchLabel: 'randomize-switch-label',
     contentTextField: "content-text-field",
 
-    singleChoicePreviewGroup: 'multiple-choice-preview-group',
+    choicePreviewGroup: 'multiple-choice-preview-group',
+    singleChoiceContainer: 'single-choice-options-container',
+    multiChoiceContainer: 'multi-choice-options-container',
 
     toastContainer: 'toastr-success-container',
     randomizeWarningError: 'randomized-warning-error-text',
     questionHideToggle: 'hide-question-toggle-label',
-    questionHideWarning: 'hide-question-error-text'
+    questionHideWarning: 'hide-question-error-text',
+
+    moreDropdownIcon: 'more-dropdown-icon',
+    analyticsTab: 'analytics-more-tab',
+    buildTab: 'build-tab',
+
+    insightCount: 'insights-count',
+    submissionInsightTitle: 'submissions-insights-title',
+    visitMetric: 'visits-metric',
+    startMetric: 'starts-metric',
+    submissionMetric: 'submissions-metric',
+    completionRateMetric: 'completion-rate-metric'
 
 }
 
 export const FORM_TEXTS = {
+
+    falseEmail: 'soumya',
+    unUseNumber: '1',
+    simpleEmail: 'soumya@example.com',
     requiredEmailFieldErrorMessage: /Email address is required/i,
     requiredFirstNameFieldErrorMessage: /First name is required/i,
     requiredLastNameFieldErrorMessage: /Last name is required/i,
@@ -62,6 +79,8 @@ export const FORM_TEXTS = {
     questionHideWaringMessage: 'This field is hidden to the public. However, you can still edit it.',
 
     singleDemoFieldImportant: 'Single - demo field name*',
-    multiDemoFieldImportant: 'Multiple - demo field name*'
+    multiDemoFieldImportant: 'Multiple - demo field name*',
+    theFormPublishedSuccessfully: 'The form is successfully published'
+
 
 }
