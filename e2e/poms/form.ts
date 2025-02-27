@@ -1,8 +1,13 @@
 import { BrowserContext, Page, expect } from "@playwright/test";
 import { FORM_SELECTORS, FORM_TEXTS } from "../constants/selectors/form";
+
+
+
 interface FormName {
     formName: string;
 }
+
+
 export default class FormPage {
     page: Page;
 
@@ -10,6 +15,8 @@ export default class FormPage {
     startCount: number = 0;
     submissionCount: number = 0;
     completionRate: number = 0;
+
+    copiedLink: string = "";
 
     constructor(page: Page) {
         this.page = page;
@@ -378,5 +385,93 @@ export default class FormPage {
         expect(submissionCount).toBe(String(this.submissionCount));
         expect(completionRate).toBe(String(this.completionRate) + "%");
     };
+
+
+
+    gotoSettingTab = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.settingTab).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessControl)).toBeVisible();
+    }
+
+    clickOnAccessControl = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessControl)).toBeVisible();
+        await this.page.getByTestId(FORM_SELECTORS.accessControl).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordRadioInput)).toBeVisible();
+    }
+
+    choosePasswordOption = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordRadioInput)).toBeVisible();
+        this.page.getByTestId(FORM_SELECTORS.accessPasswordRadioInput).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField)).toBeVisible();
+    }
+
+    checkAccessPasswordWorkingProperly = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField)).toBeVisible();
+        this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField).fill(FORM_TEXTS.passwordChecker);
+        await this.page.getByTestId(FORM_SELECTORS.accessPasswordSaveButton).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordInputWarning)).toBeVisible({ timeout: 3000 });
+    }
+
+    enterAccessPasswordAndSaveChange = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField)).toBeVisible()
+        await this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField).fill("");
+        await this.page.getByTestId(FORM_SELECTORS.accessPasswordInputField).fill(FORM_TEXTS.accessingPassword);
+        await this.page.getByTestId(FORM_SELECTORS.accessPasswordSaveButton).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.toastContainer)).toBeEnabled();
+    }
+
+    gotoShareTab = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.shareTab).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.shareNeetoHeading)).toBeVisible();
+        await expect(this.page.getByTestId(FORM_SELECTORS.linkCopyButton)).toBeVisible();
+    }
+
+
+    copyLinkFromClipboard = async () => {
+        try {
+            this.copiedLink = await this.page.evaluate("navigator.clipboard.readText()");
+            console.log("Copied Link: ", this.copiedLink);
+            return this.copiedLink;
+        } catch (error) {
+            console.error("Failed to read clipboard:", error);
+            return null;
+        }
+    }
+
+    setupClipboardPermissions = async (context: BrowserContext) => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        return async () => {
+            await context.clearPermissions();
+        }
+    }
+
+    getTheShareLink = async (context: BrowserContext) => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.shareNeetoHeading)).toBeVisible();
+        const clearPermissions = await this.setupClipboardPermissions(context);
+
+        await this.page.getByTestId(FORM_SELECTORS.linkCopyButton).click()
+        await this.page.waitForTimeout(500);
+        await this.copyLinkFromClipboard();
+
+        await clearPermissions()
+    }
+
+    verifyThePasswordProtectedForm = async (passwordProtectedPage: Page) => {
+
+        await expect(this.copiedLink).toBeTruthy();
+        await passwordProtectedPage.goto(this.copiedLink);
+        await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.passwordProtedPageHeading)).toBeVisible();
+        await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.passwordTextField)).toBeVisible();
+        await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.continueButton)).toBeVisible();
+        await passwordProtectedPage.getByTestId(FORM_SELECTORS.passwordTextField).fill(FORM_TEXTS.accessingPassword);
+        await passwordProtectedPage.getByTestId(FORM_SELECTORS.continueButton).click();
+    }
+
+    submitAndVerifyTheResponse = async (passwordProtectedPage: Page) => {
+        await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.previewEmailTextField)).toBeVisible();
+        await passwordProtectedPage.getByTestId(FORM_SELECTORS.previewEmailTextField).fill(FORM_TEXTS.simpleEmail);
+        await passwordProtectedPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+        await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
+    }
 
 };
