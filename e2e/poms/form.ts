@@ -529,7 +529,7 @@ export default class FormPage {
 
     validateThatOneCanSubmitMultipleResponse = async (previewPage: Page, context: BrowserContext) => {
         const emailInputField = await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
-        await emailInputField.fill(FORM_TEXTS.simpleEmail);
+        await emailInputField.fill(FORM_TEXTS.simpleEmail2);
         await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
         await expect(previewPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
         await previewPage.close();
