@@ -474,4 +474,65 @@ export default class FormPage {
         await expect(passwordProtectedPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
     }
 
+
+    clickOnPreventDuplicateSubmission = async () => {
+        await expect(this.page.getByTestId(FORM_SELECTORS.preventDuplicateSubmission)).toBeVisible();
+        await this.page.getByTestId(FORM_SELECTORS.preventDuplicateSubmission).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.cookieRadio)).toBeVisible();
+    }
+
+    choosePreventDuplicateSubmission = async () => {
+        await this.page.getByTestId(FORM_SELECTORS.cookieRadio).click();
+        await expect(this.page.getByTestId(FORM_SELECTORS.preventDuplicateSaveChangeButton)).toBeVisible();
+        await this.page.getByTestId(FORM_SELECTORS.preventDuplicateSaveChangeButton).click()
+        await expect(this.page.getByTestId(FORM_SELECTORS.toastContainer)).toBeEnabled();
+    }
+
+    validateThatOneCannotSubmitResponseTwice = async (previewPage: Page, context: BrowserContext) => {
+        const emailInputField = previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
+        await emailInputField.fill(FORM_TEXTS.simpleEmail);
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+        await expect(previewPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
+
+        const previewUrl = previewPage.url();
+        await previewPage.close();
+
+        const newPreviewPage = await context.newPage();
+        await newPreviewPage.goto(previewUrl);
+
+        await expect(newPreviewPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
+
+        await newPreviewPage.close();
+    };
+
+    openFormWithDifferentCookie = async (previewPage: Page) => {
+        await expect(this.copiedLink).toBeTruthy();
+        await previewPage.goto(this.copiedLink);
+        const emailInputField = previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
+        await emailInputField.fill(FORM_TEXTS.simpleEmail);
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+        await expect(previewPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
+        previewPage.close();
+    }
+
+
+    chooseNoCheckOption = async () => {
+        await this.gotoSettingTab();
+        await expect(this.page.getByTestId(FORM_SELECTORS.preventDuplicateSubmission)).toBeVisible();
+        await this.page.getByTestId(FORM_SELECTORS.preventDuplicateSubmission).click();
+        await this.page.getByTestId(FORM_SELECTORS.noTrackRadio).click();
+        await this.page.getByTestId(FORM_SELECTORS.preventDuplicateSaveChangeButton).click()
+        await expect(this.page.getByTestId(FORM_SELECTORS.toastContainer)).toBeEnabled();
+
+    }
+
+
+    validateThatOneCanSubmitMultipleResponse = async (previewPage: Page, context: BrowserContext) => {
+        const emailInputField = await previewPage.getByTestId(FORM_SELECTORS.previewEmailTextField);
+        await emailInputField.fill(FORM_TEXTS.simpleEmail);
+        await previewPage.getByTestId(FORM_SELECTORS.previewSubmitButton).click();
+        await expect(previewPage.getByTestId(FORM_SELECTORS.previewThankYouMessage)).toBeVisible();
+        await previewPage.close();
+
+    }
 };

@@ -59,6 +59,12 @@ export const FORM_SELECTORS = {
     passwordTextField: 'password-text-field',
     continueButton: 'continue-button',
 
+    //duplicate submission
+    preventDuplicateSubmission: 'settings-item-prevent-duplicate-submissions',
+    cookieRadio: 'cookie-track-radio-item',
+    preventDuplicateSaveChangeButton: 'save-changes-button',
+    noTrackRadio: 'no-track-radio-item',
+
 
     // Analytics and insights
     insightCount: "insights-count",
@@ -83,6 +89,7 @@ export const FORM_TEXTS = {
     unUseNumber: "1",
     passwordChecker: "qwe",
     simpleEmail: "soumya@example.com",
+    simpleEmail2: "sanat@example.com",
     accessingPassword: "123456",
 
     // Error messages
